@@ -24,8 +24,6 @@ namespace OpenApiAdapter.Source
         {
             try
             {
-
-
                 var response = OpenApiClient.GetResponse(requestData, Request.Headers, new HttpMethod(Request.Method));
 
                 var res = response.Content?.ReadAsStringAsync().Result;
