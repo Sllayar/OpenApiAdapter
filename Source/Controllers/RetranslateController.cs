@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace OpenApiAdapter.Source
 {
-    [Route("adapter/retranslate")]
+    [Route("{*url}")]
     [ApiController]
     public class RetranslateController : ControllerBase
     {
