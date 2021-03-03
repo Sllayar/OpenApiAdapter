@@ -48,8 +48,6 @@ namespace OpenApiAdapter.Source
             }
             catch (Exception ex)
             {
-
-
                 return new ClientResponse()
                 {
                     Status = new ApiResponseStatus() { Code = -1, Detail = ex.Message}
