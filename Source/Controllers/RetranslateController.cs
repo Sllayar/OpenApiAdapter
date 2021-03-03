@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenApiAdapter.Source.Environment;
+using OpenApiAdapter.Source.Helpers.Crypt;
 using OpenApiAdapter.Source.Integration;
 using RFI;
 using RFI.Helpers.Crypt;
@@ -43,7 +44,7 @@ namespace OpenApiAdapter.Source
                 return new ClientResponse()
                 {
                     Status = openApirespoinse.Status,
-                    Data = DecriptRespose(openApirespoinse.Data)
+                    Data = Decryptor.DecriptRespose(openApirespoinse.Data)
                 };
             }
             catch (Exception ex)
@@ -53,18 +54,6 @@ namespace OpenApiAdapter.Source
                     Status = new ApiResponseStatus() { Code = -1, Detail = ex.Message}
                 };
             }
-        }
-
-        public static string DecriptRespose(string response)
-        {
-            string signature = "";
-
-            string des = RSAHelper.Decrypt(response, Env.PartnerPrivateKey);
-
-            if (!RSAHelper.Verify(des, signature, Env.RfiPublicKey)) 
-                throw new Exception("Signature not valid");
-
-                return TripleDESHelper.Decrypt(response, des);
         }
     }
 }
