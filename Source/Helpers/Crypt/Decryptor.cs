@@ -1,4 +1,5 @@
-﻿using RFI;
+﻿using OpenApiAdapter.Source.Environment;
+using RFI;
 using RFI.Helpers.Crypt;
 using System;
 using System.Collections.Generic;
@@ -12,9 +13,9 @@ namespace OpenApiAdapter.Source.Helpers.Crypt
 
         public static string Decipher(ApiResponse response)
         {
-            string des = RSAHelper.Decrypt(response.Des, OpenApiConfig.PartnerKeyPrivate);
+            string des = RSAHelper.Decrypt(response.Des, Env.PartnerPrivateKey);
 
-            if (!RSAHelper.Verify(response.Des, response.Signature, OpenApiConfig.RfiBankKeyPublic))
+            if (!RSAHelper.Verify(response.Des, response.Signature, Env.RfiPublicKey))
                 throw new Exception("Signature not valid");
 
             return TripleDESHelper.Decrypt(response.Data, response.Des);

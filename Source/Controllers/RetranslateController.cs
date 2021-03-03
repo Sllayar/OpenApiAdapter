@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using OpenApiAdapter.Source.Environment;
 using OpenApiAdapter.Source.Integration;
 using RFI;
 using RFI.Helpers.Crypt;
@@ -19,20 +20,27 @@ namespace OpenApiAdapter.Source
     {
 
         [HttpPost, HttpDelete, HttpDelete, HttpGet, HttpPut]
-        public ClientResponse Retranslate([FromBody] ApiRequestData safeData)
+        public ClientResponse Retranslate([FromBody] dynamic requestData)
         {
             try
             {
-                ApiResponse openApirespoinse = new ApiResponse();
 
-                var response = OpenApiClient.GetResponse(safeData, Request.Headers, new HttpMethod(Request.Method));
+
+                var response = OpenApiClient.GetResponse(requestData, Request.Headers, new HttpMethod(Request.Method));
 
                 var res = response.Content?.ReadAsStringAsync().Result;
 
-                if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                    openApirespoinse = JsonSerializer.Deserialize<ApiResponse>(res);
-                else
-                    throw new Exception(String.Format("Response status code is {0}. Body: {1}", response.StatusCode, res));
+                if (response.StatusCode != System.Net.HttpStatusCode.OK)
+                    return new ClientResponse() 
+                    {
+                        Status = new ApiResponseStatus() 
+                        { 
+                            Code = -2,
+                            Detail = String.Format("Response status code is {0}. Body: {1}", response.StatusCode, res) 
+                        }
+                    };
+
+                ApiResponse openApirespoinse = JsonSerializer.Deserialize<ApiResponse>(res);
 
                 return new ClientResponse()
                 {
@@ -42,6 +50,8 @@ namespace OpenApiAdapter.Source
             }
             catch (Exception ex)
             {
+
+
                 return new ClientResponse()
                 {
                     Status = new ApiResponseStatus() { Code = -1, Detail = ex.Message}
@@ -53,9 +63,9 @@ namespace OpenApiAdapter.Source
         {
             string signature = "";
 
-            string des = RSAHelper.Decrypt(response, OpenApiConfig.PartnerKeyPrivate);
+            string des = RSAHelper.Decrypt(response, Env.PartnerPrivateKey);
 
-            if (!RSAHelper.Verify(des, signature, OpenApiConfig.RfiBankKeyPublic)) 
+            if (!RSAHelper.Verify(des, signature, Env.RfiPublicKey)) 
                 throw new Exception("Signature not valid");
 
                 return TripleDESHelper.Decrypt(response, des);

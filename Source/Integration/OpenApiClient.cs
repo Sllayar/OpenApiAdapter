@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using OpenApiAdapter.Source.Environment;
 using RFI;
 using RFI.Helpers.Crypt;
 using System;
@@ -16,23 +17,23 @@ namespace OpenApiAdapter.Source.Integration
 {
     public static class OpenApiClient
     {
-        public static HttpResponseMessage GetResponse(ApiRequestData request, IHeaderDictionary headers, HttpMethod httpMethod)
+        public static HttpResponseMessage GetResponse(dynamic request, IHeaderDictionary headers, HttpMethod httpMethod)
         {
             ApiSafeData CriptoSafeData = new ApiSafeData()
             {
-                Data = TripleDESHelper.Encrypt(JsonSerializer.Serialize(request.Data), out string desParameters),
-                Des = RSAHelper.Encrypt(desParameters, OpenApiConfig.RfiBankKeyPublic),
-                Signature = RSAHelper.Sign(desParameters, OpenApiConfig.PartnerKeyPrivate)
+                Data = TripleDESHelper.Encrypt(JsonSerializer.Serialize(TryGetValueFromRequest(request)), out string desParameters),
+                Des = RSAHelper.Encrypt(desParameters, Env.RfiPublicKey),
+                Signature = RSAHelper.Sign(desParameters, Env.PartnerPrivateKey)
             };
 
-            if (String.IsNullOrEmpty(OpenApiConfig.CertificateFileName))
+            if (String.IsNullOrEmpty(Env.CertificateFilePath))
             {
                 using (var clientHandler = new HttpClientHandler()
                 { 
                     ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; } 
                 })
                 {
-                    return Resend(request, headers, httpMethod, clientHandler, CriptoSafeData);
+                    return Resend(headers, httpMethod, clientHandler, CriptoSafeData);
                 }    
             }
             else
@@ -41,22 +42,22 @@ namespace OpenApiAdapter.Source.Integration
                 {
                     ClientCertificateOptions = ClientCertificateOption.Manual,
                     SslProtocols = SslProtocols.Tls12,
-                    ClientCertificates = { new X509Certificate2(OpenApiConfig.CertificateFileName) }
+                    ClientCertificates = { new X509Certificate2(Env.CertificateFilePath) }
                 })
                 {
-                    return Resend(request, headers, httpMethod, clientHandler, CriptoSafeData);
+                    return Resend(headers, httpMethod, clientHandler, CriptoSafeData);
                 }
             }
         }
 
-        private static HttpResponseMessage Resend(ApiRequestData request, IHeaderDictionary headers, 
-            HttpMethod httpMethod, HttpClientHandler clientHandler, ApiSafeData CriptoSafeData)
+        private static HttpResponseMessage Resend(IHeaderDictionary headers, HttpMethod httpMethod, 
+            HttpClientHandler clientHandler, ApiSafeData CriptoSafeData)
         {
             using (HttpClient httpClient = new HttpClient(clientHandler))
             {
                 using (var content = new StringContent(JsonSerializer.Serialize(CriptoSafeData), Encoding.UTF8, "application/json"))
                 {
-                    using (var httpRequestMessage = new HttpRequestMessage(httpMethod, request.Uri))
+                    using (var httpRequestMessage = new HttpRequestMessage(httpMethod, Env.OpenApiUri))
                     {
                         foreach (var header in headers)
                             if (!cannotModifiedHeaders.Contains(header.Key))
@@ -68,6 +69,18 @@ namespace OpenApiAdapter.Source.Integration
                         return httpClient.SendAsync(httpRequestMessage).Result;
                     }
                 }
+            }
+        }
+
+        private static Object TryGetValueFromRequest(dynamic request)
+        {
+            try
+            { 
+                return request.Data; 
+            }
+            catch(Exception)
+            { 
+                return request; 
             }
         }
 
