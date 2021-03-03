@@ -20,16 +20,14 @@ namespace OpenApiAdapter.Source.Helpers.Crypt
             return TripleDESHelper.Decrypt(response.Data, response.Des);
         }
 
-        public static string DecriptRespose(string response)
+        public static string DecriptRespose(ApiResponse response)
         {
-            string signature = "";
+            string des = RSAHelper.Decrypt(response.Des, Env.PartnerPrivateKey);
 
-            string des = RSAHelper.Decrypt(response, Env.PartnerPrivateKey);
-
-            if (!RSAHelper.Verify(des, signature, Env.RfiPublicKey))
+            if (!RSAHelper.Verify(des, response.Signature, Env.RfiPublicKey))
                 throw new Exception("Signature not valid");
 
-            return TripleDESHelper.Decrypt(response, des);
+            return TripleDESHelper.Decrypt(response.Data, des);
         }
     }
 }

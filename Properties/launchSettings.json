@@ -21,10 +21,10 @@
       "commandName": "Project",
       "launchUrl": "swagger",
       "environmentVariables": {
-        "RFI_KEY_PUBLIC": "Value",
-        "PARTNER_KEY_PRIVATE": "Value",
+        "RFI_KEY_PUBLIC": "",
+        "PARTNER_KEY_PRIVATE": "",
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "OPEN_API_URI": "https://pc-api.bank.rfi",
+        "OPEN_API_URI": "",
         "CERTIFICATE_FILE": ""
       },
       "dotnetRunMessages": "true",

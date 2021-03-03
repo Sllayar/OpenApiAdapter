@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 using OpenApiAdapter.Source.Environment;
 using OpenApiAdapter.Source.Helpers.Crypt;
 using OpenApiAdapter.Source.Integration;
@@ -7,6 +10,7 @@ using RFI;
 using RFI.Helpers.Crypt;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -25,35 +29,52 @@ namespace OpenApiAdapter.Source
         {
             try
             {
-                var response = OpenApiClient.GetResponse(requestData, Request.Headers, new HttpMethod(Request.Method));
+                var response = OpenApiClient.GetResponse(requestData, Request.Headers, new HttpMethod(Request.Method), Request.Path);
 
                 var res = response.Content?.ReadAsStringAsync().Result;
-
+                
                 if (response.StatusCode != System.Net.HttpStatusCode.OK)
-                    return new ClientResponse() 
+                    return new ClientResponse()
                     {
-                        Status = new ApiResponseStatus() 
-                        { 
+                        Status = new ApiResponseStatus()
+                        {
                             Code = -2,
-                            Detail = String.Format("Response status code is {0}. Body: {1}", response.StatusCode, res) 
+                            Detail = String.Format("Response status code is {0}.", response.StatusCode)
                         }
                     };
 
-                ApiResponse openApirespoinse = JsonSerializer.Deserialize<ApiResponse>(res);
+                ApiResponse openApirespoinse = System.Text.Json.JsonSerializer.Deserialize<ApiResponse>(res);
+                dynamic data = openApirespoinse.Data is null ? null : Decryptor.DecriptRespose(openApirespoinse);
 
                 return new ClientResponse()
                 {
                     Status = openApirespoinse.Status,
-                    Data = Decryptor.DecriptRespose(openApirespoinse.Data)
+                    Data = JsonConvert.DeserializeObject<ExpandoObject>(data, new ExpandoObjectConverter())
                 };
             }
             catch (Exception ex)
             {
                 return new ClientResponse()
                 {
-                    Status = new ApiResponseStatus() { Code = -1, Detail = ex.Message}
+                    Status = new ApiResponseStatus() { Code = -1, Detail = ex.Message }
                 };
             }
         }
+
+
+        //public class Rootobject
+        //{
+        //    public Status Status { get; set; }
+        //    public object data { get; set; }
+        //    public object signature { get; set; }
+        //    public object des { get; set; }
+        //}
+
+        //public class Status
+        //{
+        //    public int code { get; set; }
+        //    public string detail { get; set; }
+        //}
+
     }
 }

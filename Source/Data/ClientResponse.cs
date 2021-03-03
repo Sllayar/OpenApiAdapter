@@ -12,6 +12,6 @@ namespace OpenApiAdapter.Source
         public ApiResponseStatus Status { get; set; }
 
         [JsonPropertyName("data")]
-        public object Data { get; set; }
+        public dynamic Data { get; set; }
     }
 }

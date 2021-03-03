@@ -18,6 +18,6 @@ namespace OpenApiAdapter.Source.Environment
 
         public static string PartnerPrivateKey => Get("PARTNER_KEY_PRIVATE") ?? throw new Exception("PartnerPrivateKey not set");
 
-        public static string CertificateFilePath => Get("CERTIFICATE_FILE") ?? throw new Exception("CertificateFilePath not set");
+        public static string CertificateFilePath => Get("CERTIFICATE_FILE");
     }
 }

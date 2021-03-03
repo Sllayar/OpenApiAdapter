@@ -9,7 +9,7 @@ namespace OpenApiAdapter.Source
     public class ApiResponse
     {
         [JsonPropertyName("status")]
-        public ApiResponseStatus Status { get; } = new ApiResponseStatus();
+        public ApiResponseStatus Status { get; set; } = new ApiResponseStatus();
 
         [JsonPropertyName("data")]
         public string Data { get; set; }
@@ -19,11 +19,5 @@ namespace OpenApiAdapter.Source
 
         [JsonPropertyName("des")]
         public string Des { get; set; }
-
-        public void SetStatus(int code, string description)
-        {
-            Status.Code = code;
-            Status.Detail = description;
-        }
     }
 }

@@ -17,11 +17,12 @@ namespace OpenApiAdapter.Source.Integration
 {
     public static class OpenApiClient
     {
-        public static HttpResponseMessage GetResponse(dynamic request, IHeaderDictionary headers, HttpMethod httpMethod)
+        public static HttpResponseMessage GetResponse(dynamic request, IHeaderDictionary headers, 
+            HttpMethod httpMethod, PathString path)
         {
             ApiSafeData CriptoSafeData = new ApiSafeData()
             {
-                Data = TripleDESHelper.Encrypt(JsonSerializer.Serialize(TryGetValueFromRequest(request)), out string desParameters),
+                Data = TripleDESHelper.Encrypt(JsonSerializer.Serialize(request), out string desParameters),
                 Des = RSAHelper.Encrypt(desParameters, Env.RfiPublicKey),
                 Signature = RSAHelper.Sign(desParameters, Env.PartnerPrivateKey)
             };
@@ -33,7 +34,7 @@ namespace OpenApiAdapter.Source.Integration
                     ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; } 
                 })
                 {
-                    return Resend(headers, httpMethod, clientHandler, CriptoSafeData);
+                    return Resend(headers, httpMethod, clientHandler, CriptoSafeData, path);
                 }    
             }
             else
@@ -45,19 +46,19 @@ namespace OpenApiAdapter.Source.Integration
                     ClientCertificates = { new X509Certificate2(Env.CertificateFilePath) }
                 })
                 {
-                    return Resend(headers, httpMethod, clientHandler, CriptoSafeData);
+                    return Resend(headers, httpMethod, clientHandler, CriptoSafeData, path);
                 }
             }
         }
 
         private static HttpResponseMessage Resend(IHeaderDictionary headers, HttpMethod httpMethod, 
-            HttpClientHandler clientHandler, ApiSafeData CriptoSafeData)
+            HttpClientHandler clientHandler, ApiSafeData CriptoSafeData, PathString path)
         {
             using (HttpClient httpClient = new HttpClient(clientHandler))
             {
                 using (var content = new StringContent(JsonSerializer.Serialize(CriptoSafeData), Encoding.UTF8, "application/json"))
                 {
-                    using (var httpRequestMessage = new HttpRequestMessage(httpMethod, Env.OpenApiUri))
+                    using (var httpRequestMessage = new HttpRequestMessage(httpMethod, Env.OpenApiUri + path))
                     {
                         foreach (var header in headers)
                             if (!cannotModifiedHeaders.Contains(header.Key))
@@ -69,18 +70,6 @@ namespace OpenApiAdapter.Source.Integration
                         return httpClient.SendAsync(httpRequestMessage).Result;
                     }
                 }
-            }
-        }
-
-        private static Object TryGetValueFromRequest(dynamic request)
-        {
-            try
-            { 
-                return request.Data; 
-            }
-            catch(Exception)
-            { 
-                return request; 
             }
         }
 
