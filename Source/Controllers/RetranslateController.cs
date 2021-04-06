@@ -49,7 +49,7 @@ namespace OpenApiAdapter.Source
                 return new ClientResponse()
                 {
                     Status = openApirespoinse.Status,
-                    Data = JsonConvert.DeserializeObject<ExpandoObject>(data, new ExpandoObjectConverter())
+                    Data = data is null ? null : JsonConvert.DeserializeObject<ExpandoObject>(data, new ExpandoObjectConverter())
                 };
             }
             catch (Exception ex)
@@ -60,21 +60,5 @@ namespace OpenApiAdapter.Source
                 };
             }
         }
-
-
-        //public class Rootobject
-        //{
-        //    public Status Status { get; set; }
-        //    public object data { get; set; }
-        //    public object signature { get; set; }
-        //    public object des { get; set; }
-        //}
-
-        //public class Status
-        //{
-        //    public int code { get; set; }
-        //    public string detail { get; set; }
-        //}
-
     }
 }
